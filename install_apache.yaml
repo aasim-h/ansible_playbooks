@@ -1,0 +1,44 @@
+#This Ansible playbook contains plays to install apache2 aka httpd on Debian based and RHEL based linux distributions.
+#It also contains plays to enable the httpd service on RHEL based distributions and add required firewall rules to access the httpd service.
+#This playbook assumes that you have already setup Ansible and configured remote server management using SSH keys.
+#You will need an inventory file that contains the IP addresses or the names of the servers.
+---
+
+- hosts: all
+  become: true
+  tasks:
+    
+    - name: update the package index and install apache2 on Debian based distributions   
+      tags: apache2,debian
+      apt:
+        name: apache2
+        state: latest
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+
+    - name: update the package index and install httpd on RHEL based distributions
+      tags: httpd,rhel
+      dnf:
+        name: httpd
+        state: latest
+        update_cache: yes
+      when: ansible_os_family == "RedHat"
+
+    - name: enable the httpd service to start on boot on RHEL based distributions
+      tags: service,httpd
+      service:
+        name: httpd
+        enabled: true
+        state: started
+      when: ansible_os_family == "RedHat"
+
+    - name: add firewall rule to open port 80 permanently on RHEL based distributions
+      tags: firewall,httpd
+      ansible.posix.firewalld:
+        port: 80/tcp
+        state: enabled
+        permanent: true
+        immediate: true
+      when: ansible_os_family == "RedHat"
+  
